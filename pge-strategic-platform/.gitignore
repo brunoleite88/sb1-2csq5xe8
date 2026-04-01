@@ -1,0 +1,50 @@
+# Arquivos de Ambiente (SENSÍVEL - NÃO VERSIONAR)
+.env
+.env.local
+.env.production
+*.env
+
+# Logs
+*.log
+logs/
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+
+# Build outputs
+backend/target/
+backend/build/
+frontend/build/
+frontend/node_modules/
+frontend/dist/
+
+# Docker volumes
+*.db
+*.sql.gz
+backups/
+
+# Certificados SSL
+*.crt
+*.key
+*.pem
+ssl/
+
+# Temporários
+tmp/
+temp/
+*.tmp
+*.bak
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Documentação gerada
+docs/generated/
+apidoc/

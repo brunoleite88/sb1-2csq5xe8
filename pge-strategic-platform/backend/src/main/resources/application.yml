@@ -1,0 +1,133 @@
+spring:
+  application:
+    name: pge-strategic-platform
+  
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:pge_strategic}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:rootpassword}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+  
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+    open-in-view: false
+  
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    default-schema: ${DB_NAME:pge_strategic}
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /pge
+  compression:
+    enabled: true
+  tomcat:
+    max-threads: 200
+    min-spare-threads: 10
+
+# JWT Configuration
+app:
+  jwt:
+    secret: ${JWT_SECRET:VGhpc0lzQVNlY3JldEtleUZvckpXVEF1dGhlbnRpY2F0aW9uSW5QR0U=}
+    expiration: ${JWT_EXPIRATION:86400000}
+    refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+# Security Configuration
+security:
+  jwt:
+    token-prefix: Bearer
+    header: Authorization
+  allowed-origins: ${ALLOWED_ORIGINS:http://localhost:3000,http://localhost:80}
+  allowed-methods: GET,POST,PUT,DELETE,PATCH,OPTIONS
+  max-age: 3600
+
+# API Documentation
+springdoc:
+  api-docs:
+    path: /api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    tags-sorter: alpha
+    operations-sorter: alpha
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+  security:
+    enabled: true
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.pge.strategic: DEBUG
+    org.springframework.security: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/pge-strategic-platform.log
+    max-size: 10MB
+    max-history: 30
+
+# File Upload
+spring.servlet:
+  multipart:
+    max-file-size: 50MB
+    max-request-size: 50MB
+
+# Custom Application Properties
+pge:
+  app:
+    name: PGE Strategic Platform
+    version: 1.0.0
+    description: Sistema de Gestão Estratégica para Procuradoria Geral do Estado
+  
+  customization:
+    enabled: true
+    allow-admin-labels-edit: true
+    allow-workflow-config: true
+    allow-dashboard-config: true
+  
+  user:
+    default-role-level: 6
+    password-min-length: 8
+    password-require-special-char: true
+    session-timeout-minutes: 60
+  
+  pagination:
+    default-page-size: 20
+    max-page-size: 100
+  
+  risk:
+    matrix:
+      min-probability: 1
+      max-probability: 5
+      min-impact: 1
+      max-impact: 5
+      critical-threshold: 15
+      high-threshold: 10
+      medium-threshold: 5

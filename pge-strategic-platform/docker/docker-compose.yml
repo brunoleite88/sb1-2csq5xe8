@@ -1,0 +1,125 @@
+version: '3.8'
+
+services:
+  # Banco de Dados MySQL 8.0
+  database:
+    image: mysql:8.0
+    container_name: pge-database
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-pge_root_2025}
+      MYSQL_DATABASE: ${DB_NAME:-pge_strategic}
+      MYSQL_USER: ${DB_USER:-pge_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-pge_secure_2025}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - pge_mysql_data:/var/lib/mysql
+      - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - pge-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend Spring Boot
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: pge-backend
+    restart: always
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILE:-docker}
+      DB_HOST: database
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-pge_strategic}
+      DB_USER: ${DB_USER:-pge_user}
+      DB_PASSWORD: ${DB_PASSWORD:-pge_secure_2025}
+      JWT_SECRET: ${JWT_SECRET:-pge_jwt_secret_key_2025_change_in_production}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      SMTP_HOST: ${SMTP_HOST:-smtp.example.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET:-}
+      AWS_ACCESS_KEY: ${AWS_ACCESS_KEY:-}
+      AWS_SECRET_KEY: ${AWS_SECRET_KEY:-}
+      RECAPTCHA_SITE_KEY: ${RECAPTCHA_SITE_KEY:-}
+      RECAPTCHA_SECRET_KEY: ${RECAPTCHA_SECRET_KEY:-}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    volumes:
+      - pge_logs:/app/logs
+      - pge_uploads:/app/uploads
+    networks:
+      - pge-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/forpdi/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Frontend React + Apache
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8080/forpdi}
+        - REACT_APP_RECAPTCHA_KEY=${REACTTCHA_SITE_KEY:-}
+    container_name: pge-frontend
+    restart: always
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+      - "${FRONTEND_SSL_PORT:-443}:443"
+    volumes:
+      - pge_frontend_logs:/var/log/apache2
+    networks:
+      - pge-network
+
+  # Nginx Reverse Proxy (Opcional para produção)
+  nginx-proxy:
+    image: nginx:alpine
+    container_name: pge-nginx
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - backend
+    ports:
+      - "${NGINX_HTTP_PORT:-8000}:80"
+      - "${NGINX_HTTPS_PORT:-8443}:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - pge_nginx_logs:/var/log/nginx
+    networks:
+      - pge-network
+    profiles:
+      - production
+
+volumes:
+  pge_mysql_data:
+    driver: local
+  pge_logs:
+    driver: local
+  pge_uploads:
+    driver: local
+  pge_frontend_logs:
+    driver: local
+  pge_nginx_logs:
+    driver: local
+
+networks:
+  pge-network:
+    driver: bridge

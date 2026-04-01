@@ -1,0 +1,846 @@
+-- Liquibase Changelog Principal para PGE Strategic Platform
+-- Database: MySQL 5.7/8.0
+-- Encoding: UTF-8
+
+databaseChangeLog:
+  - property:
+      name: now
+      value: now()
+      
+  # Tabela de Customização do Sistema (Core)
+  - changeSet:
+      id: 001-create-system-customization
+      author: pge-dev-team
+      changes:
+        - createTable:
+            tableName: system_customization
+            remarks: "Configurações de customização completa do sistema pelo administrador"
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: customization_key
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+                  remarks: "Chave única da customização (ex: LABEL_PROCESSO, TITLE_DASHBOARD)"
+              - column:
+                  name: customization_value
+                  type: TEXT
+                  constraints:
+                    nullable: false
+                  remarks: "Valor personalizado"
+              - column:
+                  name: category
+                  type: VARCHAR(100)
+                  remarks: "Categoria: LABELS, MESSAGES, TITLES, WORKFLOWS, DASHBOARDS"
+              - column:
+                  name: description
+                  type: VARCHAR(500)
+                  remarks: "Descrição da customização"
+              - column:
+                  name: is_active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+                  remarks: "Status da customização"
+              - column:
+                  name: created_by
+                  type: BIGINT
+                  remarks: "ID do usuário que criou"
+              - column:
+                  name: created_at
+                  type: DATETIME
+                  defaultValueComputed: "${now}"
+              - column:
+                  name: updated_at
+                  type: DATETIME
+                  defaultValueComputed: "${now}"
+
+  # Tabela de Estrutura Organizacional
+  - changeSet:
+      id: 002-create-organizational-units
+      author: pge-dev-team
+      changes:
+        - createTable:
+            tableName: organizational_unit
+            remarks: "Unidades organizacionais da PGE (Procuradorias Regionais, Setoriais, Núcleos)"
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                  remarks: "Nome da unidade"
+              - column:
+                  name: code
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+                    unique: true
+                  remarks: "Código identificador"
+              - column:
+                  name: unit_type
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+                  remarks: "Tipo: REGIONAL, SETORIAL, NUCLEO, COORDENACAO, GABINETE"
+              - column:
+                  name: parent_unit_id
+                  type: BIGINT
+                  remarks: "ID da unidade pai (hierarquia)"
+              - column:
+                  name: description
+                  type: TEXT
+                  remarks: "Descrição detalhada"
+              - column:
+                  name: legal_basis
+                  type: TEXT
+                  remarks: "Fundamento legal (lei, decreto, portaria)"
+              - column:
+                  name: is_active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+              - column:
+                  name: created_at
+                  type: DATETIME
+                  defaultValueComputed: "${now}"
+              - column:
+                  name: updated_at
+                  type: DATETIME
+                  defaultValueComputed: "${now}"
+
+  # Tabela de Competências Legais
+  - changeSet:
+      id: 003-create-legal-competencies
+      author: pge-dev-team
+      changes:
+        - createTable:
+            tableName: legal_competency
+            remarks: "Competências legais das unidades (leis, decretos, portarias)"
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: title
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: false
+                  remarks: "Título da competência"
+              - column:
+                  name: description
+                  type: TEXT
+                  constraints:
+                    nullable: false
+                  remarks: "Descrição detalhada da competência"
+              - column:
+                  name: legal_document_type
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+                  remarks: "Tipo: LEI, DECRETO, PORTARIA, RESOLUCAO, INSTRUCAO_NORMATIVA"
+              - column:
+                  name: legal_document_number
+                  type: VARCHAR(100)
+                  remarks: "Número do documento legal"
+              - column:
+                  name: legal_document_date
+                  type: DATE
+                  remarks: "Data do documento legal"
+              - column:
+                  name: organ_unit_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                  remarks: "FK para organizational_unit"
+              - column:
+                  name: is_active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+              - column:
+                  name: created_at
+                  type: DATETIME
+                  defaultValueComputed: "${now}"
+
+  # Tabela de Usuários
+  - changeSet:
+      id: 004-create-users
+      author: pge-dev-team
+      changes:
+        - createTable:
+            tableName: app_user
+            remarks: "Usuários do sistema"
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: email
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: password_hash
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: full_name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: registration_number
+                  type: VARCHAR(50)
+                  remarks: "Número de matrícula ou OAB"
+              - column:
+                  name: organ_unit_id
+                  type: BIGINT
+                  remarks: "FK para organizational_unit"
+              - column:
+                  name: role_level
+                  type: INT
+                  constraints:
+                    nullable: false
+                  remarks: "Nível hierárquico: 1-ADMIN, 2-PROCURADOR_GERAL, 3-REGIONAL, 4-PROCURADOR, 5-ANALISTA, 6-VISUALIZADOR"
+              - column:
+                  name: is_active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+              - column:
+                  name: last_login
+                  type: DATETIME
+              - column:
+                  name: created_at
+                  type: DATETIME
+                  defaultValueComputed: "${now}"
+              - column:
+                  name: updated_at
+                  type: DATETIME
+                  defaultValueComputed: "${now}"
+
+  # Tabela de Planos Estratégicos
+  - changeSet:
+      id: 005-create-strategic-plans
+      author: pge-dev-team
+      changes:
+        - createTable:
+            tableName: strategic_plan
+            remarks: "Planos estratégicos institucionais"
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: title
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: start_date
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: end_date
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(50)
+                  defaultValue: "EM_ELABORACAO"
+                  remarks: "EM_ELABORACAO, APROVADO, EM_EXECUCAO, CONCLUIDO, SUSPENSO"
+              - column:
+                  name: organ_unit_id
+                  type: BIGINT
+                  remarks: "Unidade responsável"
+              - column:
+                  name: created_by
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: DATETIME
+                  defaultValueComputed: "${now}"
+              - column:
+                  name: updated_at
+                  type: DATETIME
+                  defaultValueComputed: "${now}"
+
+  # Tabela de Objetivos Estratégicos
+  - changeSet:
+      id: 006-create-strategic-objectives
+      author: pge-dev-team
+      changes:
+        - createTable:
+            tableName: strategic_objective
+            remarks: "Objetivos dos planos estratégicos"
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: title
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: strategic_plan_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                  remarks: "FK para strategic_plan"
+              - column:
+                  name: priority
+                  type: INT
+                  defaultValue: 5
+                  remarks: "Prioridade 1-10 (1=máxima)"
+              - column:
+                  name: target_value
+                  type: DECIMAL(10,2)
+                  remarks: "Meta numérica"
+              - column:
+                  name: measurement_unit
+                  type: VARCHAR(50)
+                  remarks: "Unidade de medida: PERCENTUAL, QUANTIDADE, TEMPO"
+              - column:
+                  name: deadline
+                  type: DATE
+              - column:
+                  name: status
+                  type: VARCHAR(50)
+                  defaultValue: "NAO_INICIADO"
+              - column:
+                  name: created_at
+                  type: DATETIME
+                  defaultValueComputed: "${now}"
+              - column:
+                  name: updated_at
+                  type: DATETIME
+                  defaultValueComputed: "${now}"
+
+  # Tabela de Riscos Jurídicos
+  - changeSet:
+      id: 007-create-legal-risks
+      author: pge-dev-team
+      changes:
+        - createTable:
+            tableName: legal_risk
+            remarks: "Riscos jurídicos e processuais"
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: title
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: TEXT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: risk_category
+                  type: VARCHAR(100)
+                  remarks: "Categoria: PROCESSUAL, CONSULTIVO, CONTENCIOSO, ADMINISTRATIVO, REPUTACIONAL"
+              - column:
+                  name: probability
+                  type: INT
+                  constraints:
+                    nullable: false
+                  remarks: "Probabilidade 1-5"
+              - column:
+                  name: impact
+                  type: INT
+                  constraints:
+                    nullable: false
+                  remarks: "Impacto 1-5"
+              - column:
+                  name: risk_score
+                  type: INT
+                  remarks: "Score calculado (probability x impact)"
+              - column:
+                  name: mitigation_plan
+                  type: TEXT
+                  remarks: "Plano de mitigação"
+              - column:
+                  name: contingency_plan
+                  type: TEXT
+                  remarks: "Plano de contingência"
+              - column:
+                  name: responsible_unit_id
+                  type: BIGINT
+                  remarks: "FK para organizational_unit"
+              - column:
+                  name: responsible_user_id
+                  type: BIGINT
+                  remarks: "FK para app_user"
+              - column:
+                  name: status
+                  type: VARCHAR(50)
+                  defaultValue: "IDENTIFICADO"
+                  remarks: "IDENTIFICADO, AVALIADO, MITIGANDO, MONITORADO, ENCERRADO"
+              - column:
+                  name: identified_at
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: DATETIME
+                  defaultValueComputed: "${now}"
+              - column:
+                  name: updated_at
+                  type: DATETIME
+                  defaultValueComputed: "${now}"
+
+  # Tabela de Processos (Judiciais e Administrativos)
+  - changeSet:
+      id: 008-create-processes
+      author: pge-dev-team
+      changes:
+        - createTable:
+            tableName: process_case
+            remarks: "Processos judiciais e administrativos"
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: case_number
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+                  remarks: "Número do processo"
+              - column:
+                  name: process_type
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+                  remarks: "JUDICIAL, ADMINISTRATIVO, CONSULTA, PARECER"
+              - column:
+                  name: subject
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: description
+                  type: TEXT
+              - column:
+                  name: court_or_agency
+                  type: VARCHAR(255)
+                  remarks: "Órgão julgador ou unidade administrativa"
+              - column:
+                  name: parties
+                  type: TEXT
+                  remarks: "Partes envolvidas (JSON)"
+              - column:
+                  name: responsible_unit_id
+                  type: BIGINT
+                  remarks: "FK para organizational_unit"
+              - column:
+                  name: responsible_user_id
+                  type: BIGINT
+                  remarks: "FK para app_user"
+              - column:
+                  name: priority
+                  type: INT
+                  defaultValue: 5
+                  remarks: "Prioridade 1-10"
+              - column:
+                  name: status
+                  type: VARCHAR(50)
+                  defaultValue: "EM_ANDAMENTO"
+              - column:
+                  name: filed_at
+                  type: DATE
+              - column:
+                  name: created_at
+                  type: DATETIME
+                  defaultValueComputed: "${now}"
+              - column:
+                  name: updated_at
+                  type: DATETIME
+                  defaultValueComputed: "${now}"
+
+  # Índices para performance
+  - changeSet:
+      id: 009-create-indexes
+      author: pge-dev-team
+      changes:
+        - createIndex:
+            indexName: idx_organizational_unit_parent
+            tableName: organizational_unit
+            unique: false
+            columns:
+              - column:
+                  name: parent_unit_id
+        - createIndex:
+            indexName: idx_legal_competency_unit
+            tableName: legal_competency
+            unique: false
+            columns:
+              - column:
+                  name: organ_unit_id
+        - createIndex:
+            indexName: idx_user_unit
+            tableName: app_user
+            unique: false
+            columns:
+              - column:
+                  name: organ_unit_id
+        - createIndex:
+            indexName: idx_strategic_objective_plan
+            tableName: strategic_objective
+            unique: false
+            columns:
+              - column:
+                  name: strategic_plan_id
+        - createIndex:
+            indexName: idx_legal_risk_responsible
+            tableName: legal_risk
+            unique: false
+            columns:
+              - column:
+                  name: responsible_unit_id
+        - createIndex:
+            indexName: idx_process_case_number
+            tableName: process_case
+            unique: true
+            columns:
+              - column:
+                  name: case_number
+
+  # Dados iniciais de customização
+  - changeSet:
+      id: 010-insert-default-customizations
+      author: pge-dev-team
+      changes:
+        - insert:
+            tableName: system_customization
+            columns:
+              - column:
+                  name: customization_key
+                  value: "SYSTEM_TITLE"
+              - column:
+                  name: customization_value
+                  value: "PGE Strategic Platform - Sistema de Gestão Estratégica"
+              - column:
+                  name: category
+                  value: "TITLES"
+              - column:
+                  name: description
+                  value: "Título principal do sistema"
+              - column:
+                  name: is_active
+                  valueBoolean: true
+        - insert:
+            tableName: system_customization
+            columns:
+              - column:
+                  name: customization_key
+                  value: "LABEL_ORGANIZATIONAL_UNIT"
+              - column:
+                  name: customization_value
+                  value: "Procuradoria"
+              - column:
+                  name: category
+                  value: "LABELS"
+              - column:
+                  name: description
+                  value: "Label para unidade organizacional"
+              - column:
+                  name: is_active
+                  valueBoolean: true
+        - insert:
+            tableName: system_customization
+            columns:
+              - column:
+                  name: customization_key
+                  value: "LABEL_PROCESS"
+              - column:
+                  name: customization_value
+                  value: "Processo"
+              - column:
+                  name: category
+                  value: "LABELS"
+              - column:
+                  name: description
+                  value: "Label genérico para processo"
+              - column:
+                  name: is_active
+                  valueBoolean: true
+        - insert:
+            tableName: system_customization
+            columns:
+              - column:
+                  name: customization_key
+                  value: "MESSAGE_WELCOME"
+              - column:
+                  name: customization_value
+                  value: "Bem-vindo ao sistema de gestão estratégica da Procuradoria Geral do Estado"
+              - column:
+                  name: category
+                  value: "MESSAGES"
+              - column:
+                  name: description
+                  value: "Mensagem de boas-vindas"
+              - column:
+                  name: is_active
+                  valueBoolean: true
+
+  # Dados iniciais: Unidades Organizacionais
+  - changeSet:
+      id: 011-insert-default-organizational-units
+      author: pge-dev-team
+      changes:
+        - insert:
+            tableName: organizational_unit
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 1
+              - column:
+                  name: name
+                  value: "Procuradoria Geral do Estado"
+              - column:
+                  name: code
+                  value: "PGE-GABINETE"
+              - column:
+                  name: unit_type
+                  value: "GABINETE"
+              - column:
+                  name: description
+                  value: "Gabinete do Procurador Geral do Estado"
+              - column:
+                  name: legal_basis
+                  value: "Lei Complementar Estadual nº XX/XXXX"
+              - column:
+                  name: is_active
+                  valueBoolean: true
+              - column:
+                  name: created_at
+                  valueComputed: "${now}"
+              - column:
+                  name: updated_at
+                  valueComputed: "${now}"
+        - insert:
+            tableName: organizational_unit
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 2
+              - column:
+                  name: name
+                  value: "Procuradoria Regional 1ª Região"
+              - column:
+                  name: code
+                  value: "PGE-REG-01"
+              - column:
+                  name: unit_type
+                  value: "REGIONAL"
+              - column:
+                  name: parent_unit_id
+                  valueNumeric: 1
+              - column:
+                  name: description
+                  value: "Procuradoria Regional da 1ª Região"
+              - column:
+                  name: legal_basis
+                  value: "Decreto Estadual nº XX/XXXX"
+              - column:
+                  name: is_active
+                  valueBoolean: true
+              - column:
+                  name: created_at
+                  valueComputed: "${now}"
+              - column:
+                  name: updated_at
+                  valueComputed: "${now}"
+        - insert:
+            tableName: organizational_unit
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 3
+              - column:
+                  name: name
+                  value: "Procuradoria de Consultoria Jurídica"
+              - column:
+                  name: code
+                  value: "PGE-CONSULTORIA"
+              - column:
+                  name: unit_type
+                  value: "SETORIAL"
+              - column:
+                  name: parent_unit_id
+                  valueNumeric: 1
+              - column:
+                  name: description
+                  value: "Procuradoria responsável por consultoria jurídica"
+              - column:
+                  name: legal_basis
+                  value: "Portaria PGE nº XX/XXXX"
+              - column:
+                  name: is_active
+                  valueBoolean: true
+              - column:
+                  name: created_at
+                  valueComputed: "${now}"
+              - column:
+                  name: updated_at
+                  valueComputed: "${now}"
+
+  # Dados iniciais: Usuários Padrão
+  - changeSet:
+      id: 012-insert-default-users
+      author: pge-dev-team
+      comment: "Senha padrão para todos: admin@123 (BCrypt hash gerado)"
+      changes:
+        - insert:
+            tableName: app_user
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 1
+              - column:
+                  name: email
+                  value: "admin@pge.estado.gov.br"
+              - column:
+                  name: password_hash
+                  value: "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
+              - column:
+                  name: full_name
+                  value: "Administrador do Sistema"
+              - column:
+                  name: registration_number
+                  value: "ADMIN-001"
+              - column:
+                  name: organ_unit_id
+                  valueNumeric: 1
+              - column:
+                  name: role_level
+                  valueNumeric: 1
+              - column:
+                  name: is_active
+                  valueBoolean: true
+              - column:
+                  name: created_at
+                  valueComputed: "${now}"
+              - column:
+                  name: updated_at
+                  valueComputed: "${now}"
+        - insert:
+            tableName: app_user
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 2
+              - column:
+                  name: email
+                  value: "procurador.geral@pge.estado.gov.br"
+              - column:
+                  name: password_hash
+                  value: "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
+              - column:
+                  name: full_name
+                  value: "Procurador Geral do Estado"
+              - column:
+                  name: registration_number
+                  value: "OAB/XX 000.000"
+              - column:
+                  name: organ_unit_id
+                  valueNumeric: 1
+              - column:
+                  name: role_level
+                  valueNumeric: 2
+              - column:
+                  name: is_active
+                  valueBoolean: true
+              - column:
+                  name: created_at
+                  valueComputed: "${now}"
+              - column:
+                  name: updated_at
+                  valueComputed: "${now}"
+        - insert:
+            tableName: app_user
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 3
+              - column:
+                  name: email
+                  value: "analista@pge.estado.gov.br"
+              - column:
+                  name: password_hash
+                  value: "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
+              - column:
+                  name: full_name
+                  value: "Analista Técnico"
+              - column:
+                  name: registration_number
+                  value: "MATRÍCULA-00001"
+              - column:
+                  name: organ_unit_id
+                  valueNumeric: 3
+              - column:
+                  name: role_level
+                  valueNumeric: 5
+              - column:
+                  name: is_active
+                  valueBoolean: true
+              - column:
+                  name: created_at
+                  valueComputed: "${now}"
+              - column:
+                  name: updated_at
+                  valueComputed: "${now}"
